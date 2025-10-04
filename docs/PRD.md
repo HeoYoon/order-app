@@ -229,7 +229,264 @@
 - 재고 변경 이력 (추후 구현)
 - 일별/월별 통계 (추후 구현)
 
-## 5. 기본 사항
+## 5. 백엔드 개발 요구사항
+
+### 5.1. 데이터 모델
+
+#### 5.1.1. Menus 테이블
+메뉴 정보를 저장하는 테이블:
+- **id**: 메뉴 고유 식별자 (Primary Key, Auto Increment)
+- **name**: 커피 이름 (예: "아메리카노", "카페 라떼", "카푸치노")
+- **description**: 메뉴 설명 (예: "진한 에스프레소와 뜨거운 물의 완벽한 조화")
+- **price**: 기본 가격 (정수, 원 단위)
+- **image_url**: 메뉴 이미지 URL 경로
+- **stock_quantity**: 재고 수량 (정수)
+- **created_at**: 생성 일시
+- **updated_at**: 수정 일시
+
+#### 5.1.2. Options 테이블
+메뉴 옵션 정보를 저장하는 테이블:
+- **id**: 옵션 고유 식별자 (Primary Key, Auto Increment)
+- **name**: 옵션 이름 (예: "샷 추가", "바닐라 시럽", "시나몬 추가")
+- **price**: 옵션 가격 (정수, 원 단위, 0원도 가능)
+- **menu_id**: 연결할 메뉴 ID (Foreign Key, Menus 테이블 참조)
+- **created_at**: 생성 일시
+- **updated_at**: 수정 일시
+
+#### 5.1.3. Orders 테이블
+주문 정보를 저장하는 테이블:
+- **id**: 주문 고유 식별자 (Primary Key, Auto Increment)
+- **order_datetime**: 주문 일시 (DATETIME)
+- **order_items**: 주문 내용 JSON 형태로 저장
+  - 메뉴명, 수량, 선택한 옵션, 개별 금액 포함
+- **total_amount**: 주문 총 금액 (정수, 원 단위)
+- **status**: 주문 상태 (ENUM: 'ORDER_RECEIVED', 'MAKING', 'COMPLETED')
+- **created_at**: 생성 일시
+- **updated_at**: 수정 일시
+
+### 5.2. 사용자 흐름 및 데이터 처리
+
+#### 5.2.1. 메뉴 조회 및 표시
+- **프론트엔드**: 메뉴 목록 화면 로드 시 API 호출
+- **백엔드**: Menus 테이블에서 모든 메뉴 정보 조회
+- **응답 데이터**: 메뉴명, 설명, 가격, 이미지 URL
+- **재고 정보**: 관리자 화면에서만 재고 수량 표시
+
+#### 5.2.2. 장바구니 기능
+- **클라이언트 사이드**: 선택한 메뉴와 옵션을 임시 저장
+- **장바구니 표시**: 메뉴명, 수량, 선택 옵션, 계산된 금액
+- **실시간 계산**: 기본 가격 + 옵션 가격의 총합
+
+#### 5.2.3. 주문 처리
+- **주문 데이터 생성**: Orders 테이블에 새 레코드 생성
+- **주문 내용 저장**: order_items 필드에 JSON 형태로 저장
+  ```json
+  {
+    "items": [
+      {
+        "menu_id": 1,
+        "menu_name": "아메리카노",
+        "quantity": 2,
+        "options": ["샷 추가"],
+        "item_price": 5000,
+        "total_price": 10000
+      }
+    ]
+  }
+  ```
+- **재고 차감**: 주문한 메뉴의 재고 수량 자동 감소
+- **주문 상태**: 기본값 'ORDER_RECEIVED'로 설정
+
+#### 5.2.4. 관리자 주문 현황
+- **주문 목록 조회**: Orders 테이블에서 모든 주문 정보 조회
+- **상태별 필터링**: 주문 상태별로 주문 건수 카운트
+- **실시간 업데이트**: 주문 상태 변경 시 즉시 반영
+
+#### 5.2.5. 주문 상태 관리
+- **상태 변경**: 관리자가 주문 상태를 단계별로 변경
+- **상태 흐름**: 주문 접수 → 제조 중 → 제조 완료
+- **재고 관리**: 주문 완료 시 재고 수량 업데이트
+
+### 5.3. API 설계
+
+#### 5.3.1. 메뉴 관련 API
+
+**GET /api/menus**
+- **목적**: 모든 메뉴 목록 조회
+- **응답**: 메뉴 목록 (이름, 설명, 가격, 이미지)
+- **사용처**: 주문 화면 메뉴 표시
+
+**GET /api/menus/:id**
+- **목적**: 특정 메뉴 상세 정보 조회
+- **응답**: 메뉴 상세 정보 + 옵션 목록
+- **사용처**: 메뉴 상세 화면
+
+**GET /api/menus/:id/options**
+- **목적**: 특정 메뉴의 옵션 목록 조회
+- **응답**: 옵션 목록 (이름, 가격)
+- **사용처**: 메뉴 선택 시 옵션 표시
+
+#### 5.3.2. 주문 관련 API
+
+**POST /api/orders**
+- **목적**: 새 주문 생성
+- **요청 본문**:
+  ```json
+  {
+    "items": [
+      {
+        "menu_id": 1,
+        "quantity": 2,
+        "options": [1, 2],
+        "item_price": 5000
+      }
+    ],
+    "total_amount": 10000
+  }
+  ```
+- **처리 로직**: 
+  - Orders 테이블에 주문 정보 저장
+  - Menus 테이블의 재고 수량 차감
+  - 주문 상태를 'ORDER_RECEIVED'로 설정
+- **응답**: 생성된 주문 ID
+
+**GET /api/orders**
+- **목적**: 모든 주문 목록 조회 (관리자용)
+- **응답**: 주문 목록 (시간, 상품명, 총액, 상태)
+- **사용처**: 관리자 화면 주문 현황
+
+**GET /api/orders/:id**
+- **목적**: 특정 주문 상세 정보 조회
+- **응답**: 주문 상세 정보
+- **사용처**: 주문 상세 화면
+
+**PUT /api/orders/:id/status**
+- **목적**: 주문 상태 변경
+- **요청 본문**:
+  ```json
+  {
+    "status": "MAKING" // 또는 "COMPLETED"
+  }
+  ```
+- **처리 로직**: Orders 테이블의 status 필드 업데이트
+- **사용처**: 관리자 화면에서 주문 상태 변경
+
+#### 5.3.3. 재고 관리 API
+
+**GET /api/menus/stock**
+- **목적**: 모든 메뉴의 재고 현황 조회 (관리자용)
+- **응답**: 메뉴별 재고 수량
+- **사용처**: 관리자 화면 재고 현황
+
+**PUT /api/menus/:id/stock**
+- **목적**: 특정 메뉴의 재고 수량 수정
+- **요청 본문**:
+  ```json
+  {
+    "stock_quantity": 50
+  }
+  ```
+- **처리 로직**: Menus 테이블의 stock_quantity 필드 업데이트
+- **사용처**: 관리자 화면에서 재고 수량 조정
+
+#### 5.3.4. 대시보드 통계 API
+
+**GET /api/dashboard/stats**
+- **목적**: 관리자 대시보드 통계 정보 조회
+- **응답**:
+  ```json
+  {
+    "total_orders": 5,
+    "orders_received": 1,
+    "orders_making": 2,
+    "orders_completed": 2
+  }
+  ```
+- **처리 로직**: Orders 테이블에서 상태별 주문 건수 집계
+- **사용처**: 관리자 화면 대시보드 요약
+
+### 5.4. 데이터베이스 스키마
+
+#### 5.4.1. 테이블 생성 SQL
+
+```sql
+-- Menus 테이블
+CREATE TABLE menus (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    price INTEGER NOT NULL,
+    image_url VARCHAR(255),
+    stock_quantity INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Options 테이블
+CREATE TABLE options (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    price INTEGER DEFAULT 0,
+    menu_id INTEGER REFERENCES menus(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Orders 테이블
+CREATE TABLE orders (
+    id SERIAL PRIMARY KEY,
+    order_datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    order_items JSONB NOT NULL,
+    total_amount INTEGER NOT NULL,
+    status VARCHAR(20) DEFAULT 'ORDER_RECEIVED',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CHECK (status IN ('ORDER_RECEIVED', 'MAKING', 'COMPLETED'))
+);
+
+-- 인덱스 생성
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_orders_datetime ON orders(order_datetime);
+CREATE INDEX idx_options_menu_id ON options(menu_id);
+```
+
+#### 5.4.2. 초기 데이터 삽입
+
+```sql
+-- 메뉴 초기 데이터
+INSERT INTO menus (name, description, price, image_url, stock_quantity) VALUES
+('아메리카노', '진한 에스프레소와 뜨거운 물의 완벽한 조화', 4500, '/images/americano.svg', 50),
+('카페 라떼', '부드러운 우유와 에스프레소의 만남', 5000, '/images/cafe-latte.svg', 35),
+('카푸치노', '진한 에스프레소 위에 올라간 벨벳같은 우유 거품', 5000, '/images/cappuccino.svg', 40);
+
+-- 옵션 초기 데이터
+INSERT INTO options (name, price, menu_id) VALUES
+('샷 추가', 500, 1),
+('샷 추가', 500, 2),
+('샷 추가', 500, 3),
+('바닐라 시럽', 500, 2),
+('시나몬 추가', 0, 3);
+```
+
+### 5.5. 에러 처리 및 검증
+
+#### 5.5.1. 주문 생성 시 검증
+- 메뉴 존재 여부 확인
+- 재고 수량 충분 여부 확인
+- 옵션 유효성 검증
+- 가격 계산 정확성 검증
+
+#### 5.5.2. 재고 관리 시 검증
+- 재고 수량이 음수가 되지 않도록 검증
+- 주문 완료 시에만 재고 차감
+- 재고 부족 시 주문 거부 처리
+
+#### 5.5.3. 상태 변경 검증
+- 주문 상태 변경 규칙 준수 (순차적 변경)
+- 존재하지 않는 주문 ID 처리
+- 권한 검증 (관리자만 상태 변경 가능)
+
+## 6. 기본 사항
 - 프론트엔드와 백엔드를 따로 개발
 - 기본적인 웹 기술만 사용
 - 학습 목적이므로 사용자 인증이나 결제 기능은 제외
