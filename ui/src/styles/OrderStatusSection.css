@@ -1,0 +1,158 @@
+.order-status-section {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+}
+
+.total-sales {
+  font-size: 1.1rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.sales-amount {
+  font-weight: bold;
+  color: #28a745;
+  font-size: 1.2rem;
+}
+
+.orders-table {
+  overflow-x: auto;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 100px 1fr 120px 120px 150px;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  font-weight: bold;
+  color: #333;
+  border: 1px solid #e9ecef;
+}
+
+.header-cell {
+  text-align: center;
+}
+
+.table-body {
+  margin-top: 0.5rem;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 120px 120px 150px;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  background-color: white;
+  align-items: center;
+  transition: box-shadow 0.2s;
+}
+
+.table-row:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.table-cell {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-change-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.status-change-btn:hover {
+  background-color: #0056b3;
+}
+
+@media (max-width: 1024px) {
+  .table-header,
+  .table-row {
+    grid-template-columns: 80px 1fr 100px 100px 130px;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .total-sales {
+    font-size: 1rem;
+  }
+  
+  .sales-amount {
+    font-size: 1.1rem;
+  }
+  
+  .orders-table {
+    font-size: 0.8rem;
+  }
+  
+  .table-header,
+  .table-row {
+    grid-template-columns: 60px 1fr 80px 80px 100px;
+    gap: 0.25rem;
+    padding: 0.75rem;
+  }
+  
+  .order-status-section {
+    padding: 1rem;
+  }
+  
+  .status-change-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+  }
+  
+  .status-badge {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+  }
+}

@@ -1,0 +1,18 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 커피 컵 -->
+  <rect x="60" y="80" width="80" height="100" rx="8" fill="#8B4513" stroke="#654321" stroke-width="2"/>
+  
+  <!-- 컵 손잡이 -->
+  <path d="M140 120 C150 120 150 140 140 140" stroke="#654321" stroke-width="3" fill="none"/>
+  
+  <!-- 커피 표면 -->
+  <ellipse cx="100" cy="85" rx="35" ry="8" fill="#4A2C17"/>
+  
+  <!-- 증기 -->
+  <path d="M90 70 Q95 60 100 70 Q105 60 110 70" stroke="#E5E5E5" stroke-width="2" fill="none" opacity="0.7"/>
+  <path d="M95 65 Q100 55 105 65 Q110 55 115 65" stroke="#E5E5E5" stroke-width="2" fill="none" opacity="0.5"/>
+  <path d="M85 75 Q90 65 95 75 Q100 65 105 75" stroke="#E5E5E5" stroke-width="2" fill="none" opacity="0.6"/>
+  
+  <!-- 컵 받침 -->
+  <ellipse cx="100" cy="185" rx="50" ry="8" fill="#8B4513" stroke="#654321" stroke-width="2"/>
+</svg>
