@@ -6,25 +6,25 @@ const Dashboard = ({ stats }) => {
     {
       id: 'total',
       title: '전체 주문',
-      value: stats.totalOrders,
+      value: stats.total_orders,
       description: '전체 주문 건수'
     },
     {
       id: 'received',
       title: '접수 대기',
-      value: stats.receivedOrders,
+      value: stats.orders_received,
       description: '접수 대기 중인 주문 수'
     },
     {
       id: 'manufacturing',
       title: '제조 중',
-      value: stats.manufacturingOrders,
+      value: stats.orders_making,
       description: '현재 제조 중인 주문 수'
     },
     {
       id: 'completed',
       title: '제조 완료',
-      value: stats.completedOrders,
+      value: stats.orders_completed,
       description: '제조 완료된 주문 수'
     }
   ];

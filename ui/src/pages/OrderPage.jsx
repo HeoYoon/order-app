@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { menuItems, optionPrices } from '../data/menuData';
+import React, { useState, useEffect } from 'react';
+import { menuAPI, orderAPI } from '../utils/api';
 import Header from '../components/Header';
 import MenuSection from '../components/MenuSection';
 import CartSection from '../components/CartSection';
@@ -7,6 +7,31 @@ import '../styles/OrderPage.css';
 
 const OrderPage = () => {
   const [cartItems, setCartItems] = useState([]);
+  const [menuItems, setMenuItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // 메뉴 데이터 로드
+  useEffect(() => {
+    const loadMenus = async () => {
+      try {
+        setLoading(true);
+        const response = await menuAPI.getAllMenus();
+        if (response.success) {
+          setMenuItems(response.data);
+        } else {
+          setError('메뉴를 불러오는데 실패했습니다.');
+        }
+      } catch (err) {
+        console.error('메뉴 로드 오류:', err);
+        setError('메뉴를 불러오는데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMenus();
+  }, []);
 
   const addToCart = (menuItem, selectedOptions = {}) => {
     const cartItem = {
@@ -35,7 +60,10 @@ const OrderPage = () => {
     return cartItems.reduce((total, item) => {
       const optionsTotal = Object.entries(item.options).reduce((sum, [optionKey, isSelected]) => {
         if (isSelected) {
-          return sum + (optionPrices[optionKey] || 0);
+          // 옵션 가격을 메뉴 데이터에서 가져오기
+          const menu = menuItems.find(m => m.id === item.menuId);
+          const option = menu?.options?.find(opt => opt.name === optionKey);
+          return sum + (option?.price || 0);
         }
         return sum;
       }, 0);
@@ -44,7 +72,7 @@ const OrderPage = () => {
     }, 0);
   };
 
-  const handleOrder = () => {
+  const handleOrder = async () => {
     if (cartItems.length === 0) {
       alert('장바구니가 비어있습니다.');
       return;
@@ -55,11 +83,69 @@ const OrderPage = () => {
     const confirmMessage = `주문하시겠습니까?\n\n총 ${cartItems.length}개 상품\n총 금액: ${totalAmount.toLocaleString()}원`;
     
     if (window.confirm(confirmMessage)) {
-      // TODO: 주문 API 호출
-      alert(`주문이 완료되었습니다! 🎉\n\n주문 번호: #${Date.now().toString().slice(-6)}\n총 금액: ${totalAmount.toLocaleString()}원\n\n감사합니다!`);
-      setCartItems([]);
+      try {
+        // 주문 데이터 구성
+        const orderItems = cartItems.map(item => {
+          const optionsTotal = Object.entries(item.options).reduce((sum, [optionKey, isSelected]) => {
+            if (isSelected) {
+              const menu = menuItems.find(m => m.id === item.menuId);
+              const option = menu?.options?.find(opt => opt.name === optionKey);
+              return sum + (option?.price || 0);
+            }
+            return sum;
+          }, 0);
+
+          return {
+            menu_id: item.menuId,
+            quantity: item.quantity,
+            options: Object.keys(item.options).filter(key => item.options[key]),
+            item_price: item.basePrice + optionsTotal
+          };
+        });
+
+        const orderData = {
+          items: orderItems,
+          total_amount: totalAmount
+        };
+
+        // 주문 API 호출
+        const response = await orderAPI.createOrder(orderData);
+        
+        if (response.success) {
+          alert(`주문이 완료되었습니다! 🎉\n\n주문 번호: #${response.data.order_id}\n총 금액: ${totalAmount.toLocaleString()}원\n\n감사합니다!`);
+          setCartItems([]);
+        } else {
+          alert('주문 처리 중 오류가 발생했습니다.');
+        }
+      } catch (error) {
+        console.error('주문 생성 오류:', error);
+        alert(`주문 처리 중 오류가 발생했습니다: ${error.message}`);
+      }
     }
   };
+
+  if (loading) {
+    return (
+      <div className="order-page">
+        <Header currentPage="order" />
+        <div className="loading-container">
+          <p>메뉴를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="order-page">
+        <Header currentPage="order" />
+        <div className="error-container">
+          <p>오류: {error}</p>
+          <button onClick={() => window.location.reload()}>다시 시도</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="order-page">

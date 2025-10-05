@@ -117,20 +117,35 @@ const getAllOrders = async (req, res) => {
     
     // 주문 아이템을 파싱하여 더 읽기 쉬운 형태로 변환
     const orders = result.rows.map(order => {
-      const orderItems = JSON.parse(order.order_items);
-      const itemsSummary = orderItems.items.map(item => 
-        `메뉴 ID ${item.menu_id} x ${item.quantity}`
-      ).join(', ');
-      
-      return {
-        id: order.id,
-        order_datetime: order.order_datetime,
-        items_summary: itemsSummary,
-        total_amount: order.total_amount,
-        status: order.status,
-        created_at: order.created_at,
-        updated_at: order.updated_at
-      };
+      try {
+        const orderItems = JSON.parse(order.order_items);
+        const itemsSummary = orderItems.items ? 
+          orderItems.items.map(item => 
+            `메뉴 ID ${item.menu_id} x ${item.quantity}`
+          ).join(', ') : 
+          '주문 항목 없음';
+        
+        return {
+          id: order.id,
+          order_datetime: order.order_datetime,
+          items_summary: itemsSummary,
+          total_amount: order.total_amount,
+          status: order.status,
+          created_at: order.created_at,
+          updated_at: order.updated_at
+        };
+      } catch (parseError) {
+        console.error('주문 아이템 파싱 오류:', parseError);
+        return {
+          id: order.id,
+          order_datetime: order.order_datetime,
+          items_summary: '파싱 오류',
+          total_amount: order.total_amount,
+          status: order.status,
+          created_at: order.created_at,
+          updated_at: order.updated_at
+        };
+      }
     });
     
     res.json({

@@ -20,7 +20,11 @@ app.use(limiter);
 
 // CORS 설정
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:5173',
+    'http://localhost:5174', // Vite가 다른 포트를 사용할 수 있음
+    'http://localhost:3000'  // 추가적인 포트 지원
+  ],
   credentials: true
 }));
 
